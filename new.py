@@ -94,25 +94,41 @@ def research_query(user_query):
         return error_msg
 
 
+import os
+import yt_dlp
+import streamlit as st
+
 def download_youtube_video(url):
-    """Download a YouTube video using yt_dlp."""
+    """Download a YouTube video and save it in the system's Downloads folder."""
     try:
+        # Get the system's Downloads folder
+        download_folder = os.path.join(os.path.expanduser("~"), "Downloads")
+        
         ydl_opts = {
-            'outtmpl': os.path.join(DOWNLOAD_DIR, '%(title)s.%(ext)s'),
+            'outtmpl': os.path.join(download_folder, '%(title)s.%(ext)s'),
             'quiet': False,
             'noplaylist': True,
+            'progress_hooks': [show_download_progress],  # Show progress
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
 
-        success_msg = f"✅ Video downloaded successfully in `{DOWNLOAD_DIR}`."
+        success_msg = f"✅ Video downloaded successfully in `{download_folder}`."
         st.session_state.chat_log.append(("🎥 Download", success_msg))
         return success_msg
     except Exception as e:
         error_msg = f"❌ Error downloading video: {str(e)}"
         st.session_state.chat_log.append(("⚠️ Download Error", error_msg))
         return error_msg
+
+def show_download_progress(d):
+    """Show download progress like a browser download."""
+    if d['status'] == 'downloading':
+        st.write(f"📥 Downloading: {d['_percent_str']} ({d['_speed_str']})")
+    elif d['status'] == 'finished':
+        st.write("✅ Download complete!")
+
 
 
 
